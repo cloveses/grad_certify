@@ -1,6 +1,7 @@
 import os
 import xlrd
 import math
+from PIL import Image
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
@@ -16,12 +17,12 @@ WATERMARK_TXT = "泗县教体局"
 POSITIONS = ((110,12),(94,59),(94,66),(94,76),(94,84),(98,93),(123,100))
 ## 以上为以下七项的输出位置
 ROWS = ['',] * 5
-ROWS[0] = ROWS[1] = '2018&nbsp;&nbsp;&nbsp;&nbsp;6'
-ROWS[2] = '2015&nbsp;&nbsp;&nbsp;&nbsp;9'
+ROWS[0] = ROWS[1] = '2018     6'
+ROWS[2] = '2015       9'
 ROWS[3] = '泗'
-ROWS[4] = '安徽&nbsp;&nbsp;&nbsp;&nbsp;宿州'
-ROWS5 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}&nbsp;&nbsp;&nbsp;&nbsp;{}'
-ROWS6 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}'
+ROWS[4] = '安徽    宿州'
+ROWS5 = '{}     {}    {}'
+ROWS6 = '{}     {}'
 
 IMG_PATH = ".\\gpdf"
 
@@ -34,12 +35,19 @@ IMG_PATH = ".\\gpdf"
 # BAR_Y = 14
 
 # 照片打印位置
-IMG_X = 120
-IMG_Y = 24
+IMG_X = 30
+IMG_Y = 50
 
 STUD_NO_X = STUD_NO_Y = 35
 
 PAGE_SIZE = 50
+
+def get_img_height(file,wid):
+    im = Image.open(file)
+    size = im.size
+    im.close()
+    height = (size[1]/size[0]) * wid
+    return height
 
 def confirm_path(path):
     if not os.path.exists(path):
@@ -65,18 +73,17 @@ def set_font(canv,size,font_name='msyh',font_file='msyh.ttf'):
 #     # barcode128.drawOn(c,20,100)
 
 def draw_page(canv,stud):
-    # 绘制标题
-    set_font(canv,11)
-    canv.drawString(*TITLE)
-    set_font(canv,18)
-    canv.drawString(*ID_NAME)
-    set_font(canv,10)
     ## 背景图
     # canv.drawImage('bg.jpg',POSITIONS[-1][0]*mm,POSITIONS[-1][1]*mm)
-    for index,info in enumerate(stud[:5]):
-        canv.drawString(POS_X*mm,POS_Y[index]*mm,''.join((ITEM_NAMES[index],info)))
+    set_font(canv,11)
+    for s,pos in zip(stud,POSITIONS):
+        canv.drawString(pos[0]*mm,pos[1]*mm,s)
     # 绘制照片
-    canv.drawImage(stud[-1],IMG_X*mm,IMG_Y*mm)
+    width = 30
+    height = get_img_height(stud[-1],width)
+    canv.drawImage(stud[-1],IMG_X*mm,IMG_Y*mm,width=width*mm,height=height*mm)
+    # 绘制学号
+    canv.drawString(STUD_NO_X*mm,STUD_NO_Y*mm,stud[-2])
     # # 绘制条形码
     # draw_barcode(canv,stud[0])
     # 绘制水印
@@ -93,6 +100,11 @@ def gen_pdf(dir_name,sch_name,studs):
         draw_page(canv,stud)
     canv.save()
 
+def get_space(data):
+    length = len(data)
+    space = '  '
+    i = 4 - length
+    return space * (i+1)
 
 # 学号 姓名 身份证号
 def gen(file='aa.xls'):
@@ -105,14 +117,14 @@ def gen(file='aa.xls'):
         birth_year = datas[2][6:10]
         birth_month = datas[2][10:12]
         sex = int(datas[2][-2]) % 2 == 1
-        row_6 = ROWS6.format(datas[1],'\\' if sex else '')
-        row_5 = ROWS5.format('' if sex else '\\',birth_year,birth_month)
+        row_6 = ROWS6.format(datas[1]+get_space(datas[1]),'\\' if sex else ' ')
+        row_5 = ROWS5.format(' ' if sex else '\\',birth_year,birth_month)
         data = []
         data.extend(ROWS)
         data.append(row_5)
         data.append(row_6)
         data.append(datas[0])
-        data.append('.'.join(datas[2],'png'))
+        data.append('.'.join((datas[2],'png')))
         studs.append(data)
     pages = math.ceil(len(studs)/PAGE_SIZE)
     for i in range(pages):
