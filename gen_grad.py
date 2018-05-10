@@ -1,5 +1,6 @@
 import os
 import xlrd
+import math
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
@@ -19,12 +20,9 @@ ROWS[0] = ROWS[1] = '2018&nbsp;&nbsp;&nbsp;&nbsp;6'
 ROWS[2] = '2015&nbsp;&nbsp;&nbsp;&nbsp;9'
 ROWS[3] = '泗'
 ROWS[4] = '安徽&nbsp;&nbsp;&nbsp;&nbsp;宿州'
-ROWS5 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}&nbsp;&nbsp;&nbsp;&nbsp;{}}'
+ROWS5 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}&nbsp;&nbsp;&nbsp;&nbsp;{}'
 ROWS6 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}'
 
-STUDS = [('12345678','341324200212302361',"李文娟"),
-        ('12345678','341324200212302331',"张文地"),
-        ('12345678','341324200212302361',"小文地")]
 IMG_PATH = ".\\gpdf"
 
 # BAR_METHODS = {'code39':code39.Extended39, 
@@ -40,6 +38,8 @@ IMG_X = 120
 IMG_Y = 24
 
 STUD_NO_X = STUD_NO_Y = 35
+
+PAGE_SIZE = 50
 
 def confirm_path(path):
     if not os.path.exists(path):
@@ -100,7 +100,7 @@ def gen(file='aa.xls'):
     wb = xlrd.open_workbook(file)
     ws = wb.sheets()[0]
     nrows = ws.nrows
-    for i in range(nrows):
+    for i in range(1,nrows):
         datas = ws.row_values(i)
         birth_year = datas[2][6:10]
         birth_month = datas[2][10:12]
@@ -111,9 +111,12 @@ def gen(file='aa.xls'):
         data.extend(ROWS)
         data.append(row_5)
         data.append(row_6)
+        data.append(datas[0])
+        data.append('.'.join(datas[2],'png'))
         studs.append(data)
-    for i in studs:
-        print(i)
+    pages = math.ceil(len(studs)/PAGE_SIZE)
+    for i in range(pages):
+        gen_pdf('.\\idsd','sz',studs[i*PAGE_SIZE:(i+1)*PAGE_SIZE])
 
 if __name__ == '__main__':
     gen()
