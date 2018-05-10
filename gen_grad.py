@@ -1,4 +1,5 @@
 import os
+import xlrd
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
@@ -7,21 +8,24 @@ from reportlab.graphics.barcode import code39, code128, code93
 
 
 ## 尺寸mm
-ID_SIZE = (210,148)
+ID_SIZE = (184,139)
 ## 水印文本
 WATERMARK_TXT = "泗县教体局"
 ## mm
-# POSITIONS = ((5,12),(5,9),(5,6),(5,3),(12,8))
-POS_X = 74
-POS_Y = (64,54,44,34,24,14)
-
-POSITIONS = ((84),(94,25))
+POSITIONS = ((110,12),(94,59),(94,66),(94,76),(94,84),(98,93),(123,100))
 ## 以上为以下七项的输出位置
+ROWS = ['',] * 5
+ROWS[0] = ROWS[1] = '2018&nbsp;&nbsp;&nbsp;&nbsp;6'
+ROWS[2] = '2015&nbsp;&nbsp;&nbsp;&nbsp;9'
+ROWS[3] = '泗'
+ROWS[4] = '安徽&nbsp;&nbsp;&nbsp;&nbsp;宿州'
+ROWS5 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}&nbsp;&nbsp;&nbsp;&nbsp;{}}'
+ROWS6 = '{}&nbsp;&nbsp;&nbsp;&nbsp;{}'
 
 STUDS = [('12345678','341324200212302361',"李文娟"),
         ('12345678','341324200212302331',"张文地"),
         ('12345678','341324200212302361',"小文地")]
-IMG_PATH = ".\\gpef"
+IMG_PATH = ".\\gpdf"
 
 # BAR_METHODS = {'code39':code39.Extended39, 
 #             'code128':code128.Code128,
@@ -34,6 +38,8 @@ IMG_PATH = ".\\gpef"
 # 照片打印位置
 IMG_X = 120
 IMG_Y = 24
+
+STUD_NO_X = STUD_NO_Y = 35
 
 def confirm_path(path):
     if not os.path.exists(path):
@@ -86,6 +92,31 @@ def gen_pdf(dir_name,sch_name,studs):
     for stud in studs:
         draw_page(canv,stud)
     canv.save()
+
+
+# 学号 姓名 身份证号
+def gen(file='aa.xls'):
+    studs = []
+    wb = xlrd.open_workbook(file)
+    ws = wb.sheets()[0]
+    nrows = ws.nrows
+    for i in range(nrows):
+        datas = ws.row_values(i)
+        birth_year = datas[2][6:10]
+        birth_month = datas[2][10:12]
+        sex = int(datas[2][-2]) % 2 == 1
+        row_6 = ROWS6.format(datas[1],'\\' if sex else '')
+        row_5 = ROWS5.format('' if sex else '\\',birth_year,birth_month)
+        data = []
+        data.extend(ROWS)
+        data.append(row_5)
+        data.append(row_6)
+        studs.append(data)
+    for i in studs:
+        print(i)
+
+if __name__ == '__main__':
+    gen()
 
 # def gen_all_pdfs(dir_name):
 #     schs = getdata.get_schs()
