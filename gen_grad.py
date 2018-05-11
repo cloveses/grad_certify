@@ -92,9 +92,9 @@ def draw_page(canv,stud):
     canv.drawString(IMG_X*mm+mm,IMG_Y*mm+0.5*mm,WATERMARK_TXT)
     canv.showPage()
 
-def gen_pdf(dir_name,sch_name,studs):
+def gen_pdf(dir_name,sch_name,studs,page):
     confirm_path(dir_name)
-    path = os.path.join(dir_name,sch_name + '.pdf')
+    path = os.path.join(dir_name,sch_name + str(page) + '.pdf')
     canv = canvas.Canvas(path,pagesize=(ID_SIZE[0]*mm,ID_SIZE[1]*mm))
     for stud in studs:
         draw_page(canv,stud)
@@ -128,7 +128,7 @@ def gen(file='aa.xls'):
         studs.append(data)
     pages = math.ceil(len(studs)/PAGE_SIZE)
     for i in range(pages):
-        gen_pdf('.\\idsd','sz',studs[i*PAGE_SIZE:(i+1)*PAGE_SIZE])
+        gen_pdf('.\\idsd','sz',studs[i*PAGE_SIZE:(i+1)*PAGE_SIZE],i)
 
 if __name__ == '__main__':
     gen()
