@@ -10,36 +10,23 @@ from reportlab.graphics.barcode import code39, code128, code93
 
 
 ## 尺寸mm
-ID_SIZE = (184,139)
+ID_SIZE = (297,210)
 ## 水印文本
 WATERMARK_TXT = "泗县教体局"
 ## mm
-POSITIONS = ((110,12),(94,59),(94,66),(94,76),(94,84),(98,93),(123,100))
+POSITIONS = (
+    (36,142),(31,136),(32,128),(25,121),(22,114),(35,107),(22,100),(42,55),
+    (116,81),(110,60),  #(105,85),
+    (205,143),(172,114),(190,126),(180,118),(205,109),(185,102),(192,54)
+    )
 ## 以上为以下七项的输出位置
-ROWS = ['',] * 5
-ROWS[0] = ROWS[1] = '2018     6'
-ROWS[2] = '2015       9'
-ROWS[3] = '泗'
-ROWS[4] = '安徽    宿州'
-ROWS5 = '{}     {}    {}'
-ROWS6 = '{}     {}'
-
 
 IMG_PATH = ".\\gpdf"
 
-# BAR_METHODS = {'code39':code39.Extended39, 
-#             'code128':code128.Code128,
-#             'code93':code93.Standard93}
-
-# # 条形码打印位置
-# BAR_X = 120
-# BAR_Y = 14
 
 # 照片打印位置
-IMG_X = 30
-IMG_Y = 50
-
-STUD_NO_X = STUD_NO_Y = 35
+IMG_X = 105
+IMG_Y = 85
 
 PAGE_SIZE = 50
 
@@ -76,15 +63,30 @@ def set_font(canv,size,font_name='msyh',font_file='msyh.ttf'):
 def draw_page(canv,stud):
     ## 背景图
     # canv.drawImage('bg.jpg',POSITIONS[-1][0]*mm,POSITIONS[-1][1]*mm)
+    set_font(canv,8)
+    for data,pos in zip(stud[0],POSITIONS[:8]):
+        x,y = pos
+        canv.drawString(x*mm,y*mm,data)
+
     set_font(canv,11)
-    for s,pos in zip(stud,POSITIONS):
-        canv.drawString(pos[0]*mm,pos[1]*mm,s)
+    for data,pos in zip(stud[1],POSITIONS[8:10]):
+        x,y = pos
+        canv.drawString(x*mm,y*mm,data)
+
+    for data,pos in zip(stud[2],POSITIONS[10:]):
+        x,y = pos
+        canv.drawString(x*mm,y*mm,data)
+
+    img_file = os.path.join('pho','.'.join((stud[-1],'jpg')))
+
     # 绘制照片
     width = 30
-    height = get_img_height(stud[-1],width)
-    canv.drawImage(stud[-1],IMG_X*mm,IMG_Y*mm,width=width*mm,height=height*mm)
-    # 绘制学号
-    canv.drawString(STUD_NO_X*mm,STUD_NO_Y*mm,stud[-2])
+    height = get_img_height(img_file,width)
+    canv.drawImage(img_file,IMG_X*mm,IMG_Y*mm,width=width*mm,height=height*mm)
+
+    width = 17
+    height = get_img_height(img_file,width)
+    canv.drawImage(img_file,18.5*mm,46*mm,width=width*mm,height=height*mm)
     # # 绘制条形码
     # draw_barcode(canv,stud[0])
     # 绘制水印
@@ -115,18 +117,26 @@ def gen(file='aa.xls'):
     nrows = ws.nrows
     for i in range(1,nrows):
         datas = ws.row_values(i)
-        birth_year = datas[2][6:10]
-        birth_month = datas[2][10:12]
-        sex = int(datas[2][-2]) % 2 == 1
-        row_6 = ROWS6.format(datas[1]+get_space(datas[1]),'\\' if sex else ' ')
-        row_5 = ROWS5.format(' ' if sex else '\\',birth_year,birth_month)
-        data = []
-        data.extend(ROWS)
-        data.append(row_5)
-        data.append(row_6)
-        data.append(datas[0])
-        data.append('.'.join((datas[2],'png')))
-        studs.append(data)
+
+        name_sex = ' '.join((datas[5],' '*(4-len(datas[5])),' ' * (1 if int(datas[6])==1 else 3),'\\'))
+        birth_year = datas[17][6:10]
+        birth_month = datas[17][10:12]
+        strs_left = ['   '.join((datas[1],datas[12])),
+            datas[3],
+            name_sex,
+            '  '.join((birth_year,birth_month)),
+            '  '.join((datas[8],datas[9])),
+            '2015   09','2018   06','2018  06']
+
+        strs_mid = [datas[3],'  '.join(('18',datas[12]))]
+
+        strs_right = [
+            '              '.join((datas[5],'\\' if int(datas[6])==1 else '')),
+            '          '.join(('' if int(datas[6])==1 else '\\',birth_year,birth_month)),
+            '      '.join((datas[8],datas[9])),
+            '      '.join((datas[10],datas[11])),
+            '2015   09','2018   06','2018  06']
+        studs.append((strs_left,strs_mid,strs_right,datas[17]))
     pages = math.ceil(len(studs)/PAGE_SIZE)
     for i in range(pages):
         gen_pdf('.\\idsd','sz',studs[i*PAGE_SIZE:(i+1)*PAGE_SIZE],i)
