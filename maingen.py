@@ -15,9 +15,24 @@ ID_SIZE = (297,210)
 WATERMARK_TXT = "泗县教体局"
 ## mm
 POSITIONS = [
-    [36,142],[31,136],[32,128],[25,121],[22,114],[35,107],[22,100],[42,55],
-    [116,81],[110,60],  #[105,85],
-    [205,143],[172,114],[190,126],[180,118],[205,109],[185,102],[192,54]
+    [36,137],[53,137],# y+1
+    [31,131],# y+1
+    [38,123],[57,123],[63.5,123],# y+1
+    [25,116],[43,116],# y+1
+    [22,109],[38,109],# y+1
+    [35,102],[54,102],# y+1
+    [22,94],[37,94],
+    [42,50],[55,50],
+
+    [110,72],[116,50],[130,50],# y+1
+
+    [205,138],[238,138],# y+1
+    [173,129.5],[195,129.5],[220,129.5],# y+1
+    [190,121.5],[220,121.5],# y+1
+    [180,113],[220,113],# y+1
+    [205,104],[230,104],# y+1
+    [185,96],[205,96],
+    [192,48],[215,48],
     ]
 ## 以上为以下七项的输出位置
 
@@ -25,8 +40,8 @@ IMG_PATH = ".\\gpdf"
 
 
 # 照片打印位置
-IMG_X = 105
-IMG_Y = 85
+IMG_X = 108 
+IMG_Y = 76
 
 PAGE_SIZE = 50
 
@@ -64,23 +79,23 @@ def draw_page(canv,stud):
     ## 背景图
     # canv.drawImage('bg.jpg',POSITIONS[-1][0]*mm,POSITIONS[-1][1]*mm)
     set_font(canv,8)
-    for data,pos in zip(stud[0],POSITIONS[:8]):
+    for data,pos in zip(stud[0],POSITIONS[:16]):
         x,y = pos
         canv.drawString(x*mm,y*mm,data)
 
     set_font(canv,11)
-    for data,pos in zip(stud[1],POSITIONS[8:10]):
+    for data,pos in zip(stud[1],POSITIONS[16:19]):
         x,y = pos
         canv.drawString(x*mm,y*mm,data)
 
-    for data,pos in zip(stud[2],POSITIONS[10:]):
+    for data,pos in zip(stud[2],POSITIONS[19:]):
         x,y = pos
         canv.drawString(x*mm,y*mm,data)
 
     img_file = os.path.join('pho','.'.join((stud[-1],'jpg')))
 
     # 绘制照片
-    width = 30
+    width = 36 #+6
     height = get_img_height(img_file,width)
     canv.drawImage(img_file,IMG_X*mm,IMG_Y*mm,width=width*mm,height=height*mm)
 
@@ -92,7 +107,7 @@ def draw_page(canv,stud):
     # 绘制水印
     set_font(canv,10)
     canv.setFillColorRGB(180,180,180,alpha=0.3)
-    canv.drawString(IMG_X*mm+mm,IMG_Y*mm+0.5*mm,WATERMARK_TXT)
+    canv.drawString(IMG_X*mm,IMG_Y*mm+9*mm,WATERMARK_TXT)
     canv.showPage()
 
 def gen_pdf(dir_name,sch_name,studs,page):
@@ -117,32 +132,47 @@ def gen(file='aa.xls'):
     nrows = ws.nrows
     for i in range(1,nrows):
         datas = ws.row_values(i)
-
-        name_sex = ' '.join((datas[5],' '*(4-len(datas[5])),' ' * (1 if int(datas[6])==1 else 3),'\\'))
         birth_year = datas[17][6:10]
         birth_month = datas[17][10:12]
-        strs_left = ['   '.join((datas[1],datas[12])),
+        strs_left = [datas[1],datas[12],
             datas[3],
-            name_sex,
-            '  '.join((birth_year,birth_month)),
-            '  '.join((datas[8],datas[9])),
-            '2015   09','2018   06','2018  06']
+            datas[5],'\\'*(1 if int(datas[6])==2 else 0),'\\'*(0 if int(datas[6])==2 else 1),
+            birth_year,birth_month,
+            datas[8],datas[9],
+            '2015','09',
+            '2018','06',
+            '2018','06']
 
-        strs_mid = [datas[3],'  '.join(('18',datas[12]))]
+        strs_mid = [datas[3],'18',datas[12]]
 
         strs_right = [
-            '              '.join((datas[5],'\\' if int(datas[6])==1 else '')),
-            '          '.join(('' if int(datas[6])==1 else '\\',birth_year,birth_month)),
-            '      '.join((datas[8],datas[9])),
-            '      '.join((datas[10],datas[11])),
-            '2015   09','2018   06','2018  06']
+            datas[5],'\\' if int(datas[6])==2 else '',
+            '' if int(datas[6])==2 else '\\',birth_year,birth_month,
+            datas[8],datas[9],
+            datas[10],datas[11],
+            '2015','09',
+            '2018','06',
+            '2018','06']
         studs.append((strs_left,strs_mid,strs_right,datas[17]))
     pages = math.ceil(len(studs)/PAGE_SIZE)
     for i in range(pages):
         gen_pdf('.\\idsd','sz',studs[i*PAGE_SIZE:(i+1)*PAGE_SIZE],i)
 
+def check_pho(file='aa.xls'):
+    studs = []
+    wb = xlrd.open_workbook(file)
+    ws = wb.sheets()[0]
+    nrows = ws.nrows
+    for i in range(1,nrows):
+        datas = ws.row_values(i)
+        file = os.path.join('pho','.'.join((datas[17],'jpg')))
+        if not os.path.exists(file):
+            studs.append((datas[17],datas[5]))
+    print(studs)
+
 if __name__ == '__main__':
     gen()
+    # check_pho()
 
 # def gen_all_pdfs(dir_name):
 #     schs = getdata.get_schs()
